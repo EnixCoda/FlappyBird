@@ -59,7 +59,7 @@ export default class Camera{
   getBirdInView(bird) {
     return {
       left: Math.round(CONFIG.WINDOW_WIDTH / 2 - this.pos.x + bird.pos.x),
-      bottom: Math.round(CONFIG.WINDOW_HEIGHT - bird.pos.y - CONFIG.BIRD_HEIGHT - CONFIG.GROUND_HEIGHT)
+      top: Math.round(CONFIG.WINDOW_HEIGHT - bird.pos.y - CONFIG.BIRD_HEIGHT - CONFIG.GROUND_HEIGHT)
     }
   }
 

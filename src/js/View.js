@@ -3,93 +3,90 @@ import CONFIG from './config'
 export default class View {
   init(viewEle) {
     this.viewEle = viewEle
-
-    const background = document.createElement('div')
-    background.className = 'background'
-    viewEle.appendChild(background)
-    this.background = background
-
-    const ground = document.createElement('div')
-    ground.className = 'ground'
-    viewEle.appendChild(ground)
-    this.ground = ground
-    this.ground.style.height = CONFIG.GROUND_HEIGHT + 'px'
-
-    const score = document.createElement('div')
-    score.className = 'score'
-    viewEle.appendChild(score)
-    this.score = score
-
-    const playBtn = document.createElement('div')
-    playBtn.className = 'playBtn'
-    viewEle.appendChild(playBtn)
-    this.playBtn = playBtn
-
-    const touchLayer = document.createElement('div')
-    touchLayer.className = 'touchLayer'
-    viewEle.appendChild(touchLayer)
-    this.touchLayer = touchLayer
-
-    const bird = document.createElement('div')
-    bird.className = 'bird'
-    viewEle.appendChild(bird)
-    this.bird = bird
+    this.canvas = document.createElement('canvas')
+    this.context = this.canvas.getContext('2d')
+    viewEle.appendChild(this.canvas)
+    this.update({})
   }
 
-  update({status, statuses, tubesPassed, birdInView, tubesInView}) {
-    // play button
-    const playBtnDisplay = status !== statuses.READY ? 'none' : 'block'
-    if (this.playBtn.style.display !== playBtnDisplay) {
-      this.playBtn.style.display = playBtnDisplay
-    }
+  update({status, statuses = {}, tubesPassed = 0, birdInView, tubesInView = []}) {
+    const {width, height} = this.canvas
+    if (width !== CONFIG.WINDOW_WIDTH) this.canvas.width = CONFIG.WINDOW_WIDTH
+    if (height !== CONFIG.WINDOW_HEIGHT) this.canvas.height = CONFIG.WINDOW_HEIGHT
+    this.context.clearRect(0, 0, CONFIG.WINDOW_WIDTH, CONFIG.WINDOW_HEIGHT)
+    this.drawSky()
+    this.drawBird(birdInView)
+    this.drawTubes(tubesInView)
+    this.drawGround()
+    this.drawScore(tubesPassed)
+    this.drawPlayBtn(status === statuses.READY)
+  }
 
-    // score
-    if (tubesPassed > this.score.innerHTML) {
-      this.score.innerHTML = tubesPassed
-    }
+  drawSky() {
+    this.context.beginPath()
+    this.context.rect(0, 0, CONFIG.WINDOW_WIDTH, CONFIG.WINDOW_HEIGHT)
+    this.context.fillStyle = '#88f'
+    this.context.fill()
+    this.context.closePath()
+  }
 
-    // tube
-    let tubeElement
-    let countTubeElements = this.viewEle.querySelectorAll('.tube').length
-    while (countTubeElements < tubesInView.length) {
-      tubeElement = document.createElement('div')
-      tubeElement.className = 'tube'
-      tubeElement.style.width = CONFIG.TUBE_WIDTH + 'px'
-      this.viewEle.appendChild(tubeElement)
-      countTubeElements++
+  drawBird(birdInView) {
+    if (birdInView) {
+      this.context.beginPath()
+      this.context.rect(birdInView.left, birdInView.top, CONFIG.BIRD_WIDTH, CONFIG.BIRD_HEIGHT)
+      this.context.fillStyle = '#f88'
+      this.context.fill()
+      this.context.closePath()
     }
+  }
 
-    const tubeElements = this.viewEle.querySelectorAll('.tube')
-    let tubeInView
+  drawGround() {
+    this.context.beginPath()
+    this.context.rect(0, CONFIG.WINDOW_HEIGHT - CONFIG.GROUND_HEIGHT, CONFIG.WINDOW_WIDTH, CONFIG.GROUND_HEIGHT)
+    this.context.fillStyle = '#842'
+    this.context.fill()
+    this.context.closePath()
+  }
+
+  drawPlayBtn(draw) {
+    if (draw) {
+      this.context.beginPath()
+      this.context.fillStyle = '#FFF'
+      const center = {
+        x: CONFIG.WINDOW_WIDTH / 2,
+        y: CONFIG.WINDOW_HEIGHT / 2
+      }
+      const offset = Math.min(CONFIG.WINDOW_HEIGHT, CONFIG.WINDOW_WIDTH) / 10
+      this.context.moveTo(center.x + offset, center.y);
+      this.context.lineTo(center.x - offset, center.y - offset);
+      this.context.lineTo(center.x - offset, center.y + offset);
+      this.context.fill()
+      this.context.closePath()
+    }
+  }
+
+  drawScore(tubesPassed) {
+    this.context.fillStyle = "#EEE";
+    this.context.font = "60pt Roboto";
+    const score = tubesPassed + '';
+    const x = CONFIG.WINDOW_WIDTH / 2 - this.context.measureText(score).width / 2;
+    const y = CONFIG.WINDOW_HEIGHT / 5;
+    this.context.fillText(score, x, y);
+  }
+
+  drawTubes(tubesInView) {
     let i = 0
+    this.context.fillStyle = '#8f8'
     while (i < tubesInView.length) {
-      tubeInView = tubesInView[i]
-      tubeElement = tubeElements[i]
-      tubeElement.style.transform = `translate(${tubeInView.left}px, ${tubeInView.top}px)`
-      if (tubeElement.style.height !== tubeInView.height + 'px') tubeElement.style.height = tubeInView.height + 'px'
+      let tubeInView = tubesInView[i]
+      this.context.beginPath()
+      this.context.rect(tubeInView.left, tubeInView.top, CONFIG.TUBE_WIDTH, tubeInView.height)
+      this.context.fill()
+      this.context.closePath()
       i++
     }
-    while (i < countTubeElements) {
-      tubeElements[i++].style.height = 0
-    }
-
-    // bird
-    if (birdInView) {
-      this.bird.style.width = CONFIG.BIRD_WIDTH + 'px'
-      this.bird.style.height = CONFIG.BIRD_HEIGHT + 'px'
-      this.bird.style.transform = `translate(${birdInView.left}px, ${birdInView.bottom}px)`
-    }
-
-    this.ground.style.height = CONFIG.GROUND_HEIGHT + 'px'
   }
 
   clear() {
-    this.score.innerHTML = 0
-    const tubeElements = this.viewEle.querySelectorAll('.tube')
-    let countTubeElements = tubeElements.length
-    while (countTubeElements--) {
-      let tubeElement = tubeElements[countTubeElements]
-      tubeElement.parentNode.removeChild(tubeElement)
-    }
   }
 }
